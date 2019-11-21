@@ -16,6 +16,13 @@ from time import gmtime, strftime
 import jwt
 import datetime
 import bcrypt
+
+from application.gql import Query, Mutation
+from application.gql.mutations import CREATE_USER
+from application.gql.queries import GET_USER_BY_EMAIL
+
+from application.send_grid.register import send_confirmation_email
+
 # TODO:
 # sudo apt-get install build-essential libffi-dev python-dev
 
@@ -49,44 +56,40 @@ def server_error(e):
     return "An internal error occurred", 500
 
 
-def send_email(to_emails, subject, html_content):
-    message = Mail(from_email=CONFIG.SEND_GRID_FROM_EMAIL,
-                   to_emails=to_emails,
-                   subject=subject,
-                   html_content=html_content)
-
-    try:
-        sg = SendGridAPIClient(CONFIG.SEND_GRID_API_KEY)
-        response = sg.send(message)
-        logging.info(response.status_code)
-        logging.info(response.body)
-        logging.info(response.headers)
-    except Exception as e:
-        logging.error("Error", e.message)
-
-
 def get_user_by_email(email):
     # TODO: get actual user here from the DB
-    user = {
-        'uuid': '0012934747174924',
-        'email':'test@test.com',
-        'password':"$2b$12$JiR4ndNoEECgkoMzMn97U.MEBK5AMono3pPY47IaT1bzMDimkbmqu",
-        'role': 'user'
-    }
-    return user
+    # user = {
+    #     'uuid': '0012934747174924',
+    #     'email':'test@test.com',
+    #     'password':"$2b$12$JiR4ndNoEECgkoMzMn97U.MEBK5AMono3pPY47IaT1bzMDimkbmqu",
+    #     'role': 'user'
+    # }
+    user = Query(GET_USER_BY_EMAIL, variables={"email": email}, as_admin=True)
+    # print('Getting User: ', user['user'])
+    if user['user'] == []:
+        return None
+    else:
+        return user['user'][0]
 
 
 def generate_auth_token(user):
     payload = {
-        "uuid": user['uuid'],
         "email": user['email'],
-        "role": user['role'],
-        "exp": f'{datetime.datetime.utcnow() + datetime.timedelta(seconds=900)}'
+        "aud": "localhost:8000",
+        "exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=900)),
+        "alg": "RS256",
+        "https://hasura.io/jwt/claims": {
+            "x-hasura-allowed-roles": ["user"],
+            "x-hasura-default-role": "anonymous",
+            "x-hasura-user-id": user['uuid'],
+            "x-hasura-org-id": "123",
+            "x-hasura-role": user['role'],
+            "x-hasura-custom": "custom-value"
+        }
     }
-    token = jwt.encode(payload, app.config.get(
-        'SECRET_KEY'), algorithm='HS256')
+    token = jwt.encode(payload, CONFIG.JWT_SECRET, algorithm='RS256')
 
-    print(token)
+    # print(token)
 
     print(token.decode('UTF-8'))
 
@@ -111,7 +114,7 @@ def auth_login():
     if try_user is None:  # user does not exist based on that email
         return {"STATUS": "ERROR", "MESSAGE": "User not found with that email"}
     else:
-        if  bcrypt.checkpw(password.encode('utf8'), try_user['password'].encode('utf8')):
+        if bcrypt.checkpw(password.encode('utf8'), try_user['password_hash'].encode('utf8')):
             #
             # Success!
             #
@@ -123,7 +126,13 @@ def auth_login():
 
 def is_email_valid_to_register(email):
     # TODO: Implement Logic here
-    return True
+    if "@" not in email or "." not in email:
+        return False
+    user = get_user_by_email(email)
+    if user is None:
+        return True
+    else:
+        return False
 
 
 def generate_random_confirmation_key():
@@ -147,11 +156,20 @@ def generate_password_hash(password):
 
 
 def register_new_user(email, password, confirmation_key):
-    # TODO
     # Hash password
     pwd_hash = generate_password_hash(password)
     print(pwd_hash)
-    pass
+    variables = {
+        "email": email,
+        "passwordHash": str(pwd_hash, encoding="UTF-8"),
+        "confirmationKey": confirmation_key
+    }
+    new_user = Mutation(mutation=CREATE_USER,
+                        variables=variables, as_admin=True)
+    if 'data' in new_user:
+        return new_user['data']['insert_user']['returning'][0]
+    else:
+        return None
 
 
 def is_valid_password(password):
@@ -168,7 +186,6 @@ def auth_register():
     password = data.get('password')
     confirm_password = data.get('confirm_password')
 
-    # TODO: Add actual logic here
     # Check if username is valid (does not already exist in DB and is the correct length/format etc)
     if is_email_valid_to_register(email) and is_valid_password(password) and password == confirm_password:
         # if yes:
@@ -176,7 +193,9 @@ def auth_register():
         #           - send registration confirmation email
         #
         key = generate_random_confirmation_key()
-        register_new_user(email, password, key)
+        new_user = register_new_user(email, password, key)
+        print('New User is: ', new_user)
+        send_confirmation_email(user=new_user)
         return {"STATUS": "OK", "MESSAGE": "Success! Please check your email for the confirmation link."}
     else:
         # if no: return {"STATUS": "ERROR", "MESSAGE": "Username already exists"}
@@ -186,10 +205,21 @@ def auth_register():
 @app.route('/auth/register/confirm', methods=['GET'])
 def auth_register_confirm():
     confirmation_key = request.args.get('key')
-    username = request.args.get('username')
+    uid = request.args.get('uid')
+    # print('Confirmation for ')
     # TODO: Add actual logic here
     # compare the conf key and username and make sure they match the record in the DB
     return {"STATUS": "OK"}
+
+
+@app.route('/auth/refresh', methods={'POST'})
+def auth_refresh():
+    # TODO: Refresh token here
+    pass
+
+
+def decode_token(raw_token):
+    return jwt.decode(raw_token, CONFIG.JWT_PUBLIC_KEY, algorithms=['RS256'], audience="localhost:8000")
 
 
 if __name__ == '__main__':
