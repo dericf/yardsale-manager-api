@@ -11,6 +11,7 @@ CREATE_USER = '''mutation InsertUser($email: String!, $passwordHash: String!, $c
             role
             confirmation_key
             has_confirmed
+            token_version
         }
     }
 }
