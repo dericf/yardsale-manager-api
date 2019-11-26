@@ -71,7 +71,7 @@ def generate_refresh_token(user):
     payload = {
         "email": user['email'],
         "aud": CONFIG.JWT_AUDIENCE,
-        "exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=30)),
+        "exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=CONFIG.REFRESH_TOKEN_EXPIRE)),
         "alg": "RS256",
         "token_version": 0
     }
