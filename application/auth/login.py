@@ -2,7 +2,7 @@
 # Flask
 #
 from . import auth_blueprint
-from flask import Flask, request, url_for, redirect
+from flask import Flask, request, url_for, redirect, Response, make_response
 from flask_cors import CORS, cross_origin
 #
 # Configuration Object
@@ -38,11 +38,14 @@ from application.auth.user import get_user_by_email
 
 CONFIG = conf()
 
+
 def generate_auth_token(user):
+    '''Generates a JWT access token.
+    '''
     payload = {
         "email": user['email'],
-        "aud": "localhost:8000",
-        "exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=900)),
+        "aud": CONFIG.JWT_AUDIENCE,
+        "exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=CONFIG.ACCESS_TOKEN_EXPIRE)),
         "alg": "RS256",
         "https://hasura.io/jwt/claims": {
             "x-hasura-allowed-roles": ["user"],
@@ -57,7 +60,26 @@ def generate_auth_token(user):
 
     # print(token)
 
-    print(token.decode('UTF-8'))
+    # print(token.decode('UTF-8'))
+
+    return token.decode('UTF-8')
+
+
+def generate_refresh_token(user):
+    '''Generates a JWT refresh token.
+    '''
+    payload = {
+        "email": user['email'],
+        "aud": CONFIG.JWT_AUDIENCE,
+        "exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=30)),
+        "alg": "RS256",
+        "token_version": 0
+    }
+    token = jwt.encode(payload, CONFIG.JWT_SECRET, algorithm='RS256')
+
+    # print(token)
+
+    # print(token.decode('UTF-8'))
 
     return token.decode('UTF-8')
 
@@ -78,23 +100,63 @@ def auth_login():
     #
     try_user = get_user_by_email(email)
     if try_user is None:  # user does not exist based on that email
-        return {"STATUS": "ERROR", "MESSAGE": "User not found with that email"}
+        return {"STATUS": "ERROR", "MESSAGE": "User not found"}
     else:
         if bcrypt.checkpw(password.encode('utf8'), try_user['password_hash'].encode('utf8')):
             #
             # Success!
             #
             token = generate_auth_token(try_user)
-            return {"STATUS": "OK", "token": token}
+            decoded = decode_token(token, verify=True)
+            print('\n\n\n1 - DECODED TOKEN: ', decoded)
+            refresh_token = generate_refresh_token(try_user)
+            res = make_response(
+                {"STATUS": "OK", "token": token, "refreshToken": refresh_token})
+            # res.headers['credentials'] = 'include'
+            # res.set_cookie(key='refreshToken', value=refresh_token,
+            #                max_age=CONFIG.REFRESH_TOKEN_EXPIRE, domain='127.0.0.1')
+            # res.headers['SET-COOKIE'] = f'refreshToken={refresh_token}'
+            # return {"STATUS": "OK", "token": token}
+            return res
         else:
-            return {"STATUS": "ERROR", "MESSAGE": "Incorrect password. Please try again."}
+            return {"STATUS": "ERROR", "MESSAGE": "Wrong password"}
 
 
 @auth_blueprint.route('/refresh', methods=['POST'])
 def auth_refresh():
     # TODO: Refresh token here
-    pass
+    print('Request Cookies: ', request.cookies)
+    body = request.get_json()
+    print('Body: ', body)
+    #
+    # TODO: Decode refresh token and get user
+    #
+    try:
+        rt = body.get('refreshToken')
+        print('\n\nRT: ', rt)
+        decoded_result = decode_token(rt, verify=True)
+        print('Refresh Token Result: ', decoded_result)
+        # user = get_user_by_email(refresh['email'])
+        # print('User from RF Token: ', user)
+        # new_token = generate_auth_token(user)
+        if decoded_result[0] == 'ERROR' and decoded_result[1] == "EXPIRED":
+            return {"STATUS": "ERROR", 'MESSAGE': "refresh token expired", "newToken": None}
+        elif decoded_result[0] == 'SUCCESS' and decoded_result[1] == 'VALID':
+            user = get_user_by_email(decoded_result[2]['email'])
+            return {"STATUS": "OK", "newToken": generate_auth_token(user)}
+    except Exception as e:
+        print('\n\n\n\nError: ', str(e))
+        return {'STATUS': "ERROR"}
+    #
+    # TODO: Generate new access token
+    #
 
 
-def decode_token(raw_token):
-    return jwt.decode(raw_token, CONFIG.JWT_PUBLIC_KEY, algorithms=['RS256'], audience="localhost:8000")
+def decode_token(raw_token, verify=False):
+    try:
+        decoded = jwt.decode(raw_token, CONFIG.JWT_PUBLIC_KEY, algorithms=[
+                             'RS256'], audience=CONFIG.JWT_AUDIENCE, verify=verify)
+        return ('SUCCESS', 'VALID', decoded)
+    except jwt.ExpiredSignatureError as e:
+        print('INVALID TOKEN: EXPIRED!')
+        return ('ERROR', 'EXPIRED', None)
