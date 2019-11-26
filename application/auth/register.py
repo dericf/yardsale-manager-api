@@ -30,7 +30,7 @@ import jwt
 # GraphQL
 #
 from application.gql import Query, Mutation
-from application.gql.mutations import CREATE_USER
+from application.gql.mutations import CREATE_USER, CREATE_SELLER
 from application.gql.queries import GET_USER_BY_EMAIL
 #
 # User Helper Functions
@@ -78,17 +78,21 @@ def generate_password_hash(password):
     return bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
 
 
-def register_new_user(email, password, confirmation_key):
+def register_new_user(name, initials, email, password, confirmation_key):
     # Hash password
     pwd_hash = generate_password_hash(password)
-    print(pwd_hash)
     variables = {
+        "name": name,
+        "initials": initials,
         "email": email,
         "passwordHash": str(pwd_hash, encoding="UTF-8"),
         "confirmationKey": confirmation_key
     }
     new_user = Mutation(mutation=CREATE_USER,
                         variables=variables, as_admin=True)
+    #
+    # Now create new seller for this user (that way the user can itsself be used as a seller on a yardsale)
+    #
     if 'data' in new_user:
         return new_user['data']['insert_user']['returning'][0]
     else:
@@ -102,13 +106,26 @@ def is_valid_password(password):
     return False
 
 
+def create_seller_for_new_user(user):
+    variables = {
+        "user_uuid": user['uuid'],
+        "name": user['name'],
+        "initials": user['initials'],
+        "email": user['email']
+    }
+    new_seller = Mutation(mutation=CREATE_SELLER,
+                          variables=variables, as_admin=True)
+
+
 @auth_blueprint.route('/register', methods=['POST'])
 def auth_register():
     data = request.get_json()
+    name = data.get('name')
+    initials = data.get('initials')
     email = data.get('email')
     password = data.get('password')
-    confirm_password = data.get('confirm_password')
-
+    confirm_password = data.get('confirmPassword')
+    # print('POST DATA: ', data)
     # Check if username is valid (does not already exist in DB and is the correct length/format etc)
     if is_email_valid_to_register(email) and is_valid_password(password) and password == confirm_password:
         # if yes:
@@ -116,8 +133,9 @@ def auth_register():
         #           - send registration confirmation email
         #
         key = generate_random_uuid()
-        new_user = register_new_user(email, password, key)
-        print('New User is: ', new_user)
+        new_user = register_new_user(name, initials, email, password, key)
+        # print('\n\nNew User is: ', new_user)
+        create_seller_for_new_user(user=new_user)
         send_confirmation_email(user=new_user)
         return {"STATUS": "OK", "MESSAGE": "Success! Please check your email for the confirmation link."}
     else:
