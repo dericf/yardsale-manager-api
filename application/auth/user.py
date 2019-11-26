@@ -28,7 +28,7 @@ def get_user_by_email(email):
     # Make a GQL Call as an admin
     #
     user = Query(GET_USER_BY_EMAIL, variables={"email": email}, as_admin=True)
-    print('Getting User: ', user, email)
+    # print('Getting User: ', user, email)
 
     if user['user'] == []:
         return None
