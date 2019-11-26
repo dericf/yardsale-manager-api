@@ -1,6 +1,6 @@
 # Create User
-CREATE_USER = '''mutation InsertUser($email: String!, $passwordHash: String!, $confirmationKey: String!) {
-    insert_user(objects: {email: $email, password_hash: $passwordHash, confirmation_key: $confirmationKey}) {
+CREATE_USER = '''mutation InsertUser($name: String, $initials: String, $email: String!, $passwordHash: String!, $confirmationKey: String!) {
+    insert_user(objects: {email: $email, password_hash: $passwordHash, confirmation_key: $confirmationKey, name: $name, initials: $initials}) {
         returning {
             uuid
             id
@@ -12,6 +12,8 @@ CREATE_USER = '''mutation InsertUser($email: String!, $passwordHash: String!, $c
             confirmation_key
             has_confirmed
             token_version
+            name
+            initials
         }
     }
 }
@@ -20,3 +22,19 @@ CREATE_USER = '''mutation InsertUser($email: String!, $passwordHash: String!, $c
 # Update User
 
 # Delete User
+
+
+# Create Seller
+CREATE_SELLER = '''mutation CreateSeller($user_uuid: uuid!, $email: String, $initials: String, $name: String) {
+    insert_seller(objects: {user_uuid: $user_uuid, email: $email, initials: $initials, name: $name}) {
+      returning {
+        uuid
+        user_uuid
+        name
+        is_active
+        email
+        created_at
+      }
+    }
+}
+'''
