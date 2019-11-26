@@ -11,6 +11,8 @@ GET_USER_BY_EMAIL = '''query GetUserByEmail($email: String!) {
     confirmation_key
     has_confirmed
     token_version
+    name
+    initials
   }
 }'''
 # Get User (by uuid)
@@ -26,6 +28,8 @@ GET_USER_BY_UUID = '''query GetUserByUUID($uuid: String!) {
     confirmation_key
     has_confirmed
     token_version
+    name
+    initials
   }
 }'''
 # Get Session (by user id)
