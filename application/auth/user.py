@@ -24,13 +24,9 @@ from application.gql.queries import GET_USER_BY_EMAIL
 
 
 def get_user_by_email(email):
-    # TODO: get actual user here from the DB
-    # user = {
-    #     'uuid': '0012934747174924',
-    #     'email':'test@test.com',
-    #     'password':"$2b$12$JiR4ndNoEECgkoMzMn97U.MEBK5AMono3pPY47IaT1bzMDimkbmqu",
-    #     'role': 'user'
-    # }
+    #
+    # Make a GQL Call as an admin
+    #
     user = Query(GET_USER_BY_EMAIL, variables={"email": email}, as_admin=True)
     print('Getting User: ', user, email)
 
