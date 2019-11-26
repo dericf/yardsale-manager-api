@@ -22,6 +22,7 @@ from application.gql import Query, Mutation
 from application.gql.mutations import CREATE_USER
 from application.gql.queries import GET_USER_BY_EMAIL
 
+
 def get_user_by_email(email):
     # TODO: get actual user here from the DB
     # user = {
@@ -31,7 +32,8 @@ def get_user_by_email(email):
     #     'role': 'user'
     # }
     user = Query(GET_USER_BY_EMAIL, variables={"email": email}, as_admin=True)
-    # print('Getting User: ', user['user'])
+    print('Getting User: ', user, email)
+
     if user['user'] == []:
         return None
     else:
