@@ -17,7 +17,6 @@ CREATE_USER = '''mutation InsertUser($name: String, $initials: String, $email: S
         }
     }
 }
-
 '''
 # Update User
 
@@ -38,3 +37,12 @@ CREATE_SELLER = '''mutation CreateSeller($user_uuid: uuid!, $email: String, $ini
     }
 }
 '''
+
+SET_USER_EMAIL_CONFIRMED = '''mutation SetUserEmailConfirmed($uuid: uuid) {
+  __typename
+  update_user(where: {uuid: {_eq: $uuid}}, _set: {has_confirmed: true}) {
+    returning {
+      uuid
+    }
+  }
+}'''
