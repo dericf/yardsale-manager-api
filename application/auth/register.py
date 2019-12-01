@@ -35,7 +35,7 @@ from application.gql.queries import GET_USER_BY_EMAIL
 #
 # User Helper Functions
 #
-from application.auth.user import get_user_by_email
+from application.auth.user import get_user_by_email, get_user_by_uuid, confirm_user
 #
 # SendGrid Library
 #
@@ -147,7 +147,13 @@ def auth_register():
 def auth_register_confirm():
     confirmation_key = request.args.get('key')
     uid = request.args.get('uid')
-    # print('Confirmation for ')
-    # TODO: Add actual logic here
-    # compare the conf key and username and make sure they match the record in the DB
-    return {"STATUS": "OK"}
+
+    user = get_user_by_uuid(uid)
+    print('User: ', user)
+    if user['confirmation_key'] == confirmation_key:
+        # This was the correct link. Proceed to confirm
+        #
+        user = confirm_user(uid)
+        return {"STATUS": "OK", "MESSAGE": "User has been confirmed. You may now log in at http://127.0.0.1:3000/login"}
+    else:
+        return {"STATUS": "ERROR", "MESSAGE": "Something went wrong. The link provided might have been changed from the original."}
