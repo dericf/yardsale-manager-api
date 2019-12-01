@@ -1,6 +1,7 @@
 #
 # Flask
 #
+from application.auth import auth_blueprint
 from flask import Flask, request, url_for, redirect
 from flask_cors import CORS, cross_origin
 #
@@ -34,7 +35,6 @@ app = Flask(__name__)
 app.config.from_object(CONFIG)
 #
 # Load blueprints
-from application.auth import auth_blueprint
 app.register_blueprint(auth_blueprint, url_prefix="/auth")
 #
 #
@@ -42,6 +42,7 @@ app.register_blueprint(auth_blueprint, url_prefix="/auth")
 #
 cors = CORS(
     app,
+    support_credentials=True,
     resources={
         # Accept all url patterns
         r"/*": {"origins": CONFIG.CLIENT_ORIGINS}
