@@ -16,7 +16,7 @@ GET_USER_BY_EMAIL = '''query GetUserByEmail($email: String!) {
   }
 }'''
 # Get User (by uuid)
-GET_USER_BY_UUID = '''query GetUserByUUID($uuid: String!) {
+GET_USER_BY_UUID = '''query GetUserByUUID($uuid: uuid!) {
   user(where: {uuid: {_eq: $uuid}}) {
     uuid
     id
