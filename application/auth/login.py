@@ -34,7 +34,7 @@ from application.gql.queries import GET_USER_BY_EMAIL
 #
 # User Helper Functions
 #
-from application.auth.user import get_user_by_email
+from application.auth.user import get_user_by_email, get_user_by_uuid
 
 CONFIG = conf()
 
@@ -104,22 +104,38 @@ def auth_login():
     else:
         if bcrypt.checkpw(password.encode('utf8'), try_user['password_hash'].encode('utf8')):
             #
-            # Success!
+            # User credentials are correct!
             #
+            if not try_user['has_confirmed']:
+                #
+                # User has not confirmed their email yet
+                #
+                return {"STATUS": "ERROR", "MESSAGE": "Email not confirmed"}
+
             token = generate_auth_token(try_user)
-            decoded = decode_token(token, verify=True)
-            print('\n\n\n1 - DECODED TOKEN: ', decoded)
             refresh_token = generate_refresh_token(try_user)
             res = make_response(
-                {"STATUS": "OK", "token": token, "refreshToken": refresh_token})
-            # res.headers['credentials'] = 'include'
+                {"STATUS": "OK", "token": token, "refreshToken": refresh_token, "callback": f"http://127.0.0.1:8000/auth/callback?uuid={try_user['uuid']}"})
+            # res.headers['Access-Control-Allow-Credentials'] = True
             # res.set_cookie(key='refreshToken', value=refresh_token,
-            #                max_age=CONFIG.REFRESH_TOKEN_EXPIRE, domain='127.0.0.1')
-            # res.headers['SET-COOKIE'] = f'refreshToken={refresh_token}'
-            # return {"STATUS": "OK", "token": token}
+            #                domain='127.0.0.1:3000', httponly=True)  # max_age=CONFIG.REFRESH_TOKEN_EXPIRE,
             return res
         else:
             return {"STATUS": "ERROR", "MESSAGE": "Wrong password"}
+
+
+@auth_blueprint.route('/callback')
+def login_callback():
+    user = get_user_by_uuid(request.args.get('uuid'))
+    print('\n\n\nCALLBACK USER: ', user)
+    if user:
+        refresh_token = generate_refresh_token(user)
+        res = make_response(
+            {"STATUS": "OK", "refreshToken": refresh_token})
+        res.headers['Access-Control-Allow-Credentials'] = True
+        res.set_cookie(key='refreshToken', value=refresh_token,
+                       domain='127.0.0.1', httponly=True)  # max_age=CONFIG.REFRESH_TOKEN_EXPIRE,
+        return res
 
 
 @auth_blueprint.route('/refresh', methods=['POST'])
