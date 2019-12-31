@@ -133,10 +133,13 @@ def auth_register():
         #           - send registration confirmation email
         #
         key = generate_random_uuid()
+        #
         new_user = register_new_user(name, initials, email, password, key)
-        # print('\n\nNew User is: ', new_user)
+        #
         create_seller_for_new_user(user=new_user)
+        #
         send_confirmation_email(user=new_user)
+        #
         return {"STATUS": "OK", "MESSAGE": "Success! Please check your email for the confirmation link."}
     else:
         # if no: return {"STATUS": "ERROR", "MESSAGE": "Username already exists"}

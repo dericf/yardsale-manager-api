@@ -24,13 +24,18 @@ def send_email(to_emails, subject, html_content):
 
 def build_message(user_id, confirmation_key):
     subject = 'Email Confirmation Required'
-    html_content = f'''Click the button below to confirm your email. <br/> 
-<a type="button" href="https://api.yardsalemanager.com/auth/register/confirm?key={confirmation_key}&uid={user_id}">Confirm Email</a> <br />
+    if CONFIG.ENV == 'dev':
+        link = f'https://api.yardsalemanager.meqsoftware.com/auth/register/confirm?key={confirmation_key}&uid={user_id}'
+        html_content = f'''<a type="button" href="{link}">{link}<a>'''
+    else:
+        link = f'https://api.yardsalemanager.com/auth/register/confirm?key={confirmation_key}&uid={user_id}'
+        html_content = f'''Click the link below to confirm your email. <br/> 
+<a type="button" href="{link}">Confirm Email</a> <br />
 or paste the following link into your browser <br />
-https://api.yardsalemanager.com/auth/register/confirm?key={confirmation_key}&uid={user_id}'''
+{link}'''
     return subject, html_content
 
 
 def send_confirmation_email(user):
     subject, html_content = build_message(user['uuid'], user['confirmation_key'])
-    send_email(to_emails='deric@meqsoftware.com', subject=subject, html_content=html_content)
+    send_email(to_emails=user["email"], subject=subject, html_content=html_content)
