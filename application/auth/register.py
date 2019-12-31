@@ -2,7 +2,7 @@
 # Flask
 #
 from . import auth_blueprint
-from flask import Flask, request, url_for, redirect
+from flask import Flask, request, url_for, redirect, render_template_string
 from flask_cors import CORS, cross_origin
 #
 # Configuration Object
@@ -46,6 +46,7 @@ from sendgrid.helpers.mail import Mail
 #
 from application.send_grid.register import send_confirmation_email
 
+CONFIG = conf()
 
 def is_email_valid_to_register(email):
     # TODO: Implement Logic here
@@ -157,6 +158,7 @@ def auth_register_confirm():
         # This was the correct link. Proceed to confirm
         #
         user = confirm_user(uid)
-        return {"STATUS": "OK", "MESSAGE": "User has been confirmed. You may now log in at http://127.0.0.1:3000/login"}
+        # return {"STATUS": "OK", "MESSAGE": "User has been confirmed. You may now log in at https://yardsalemanager.meqsoftware.com/login"}
+        return redirect(f"{CONFIG.HOST_BASE_URL}/register/confirm-email")
     else:
         return {"STATUS": "ERROR", "MESSAGE": "Something went wrong. The link provided might have been changed from the original."}
