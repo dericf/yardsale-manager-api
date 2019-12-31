@@ -1,0 +1,9 @@
+#!/bin/sh
+echo "Switching to branch master"
+git checkout master
+# echo "Building app"
+# npm run build
+echo "Deploying files to server"
+rsync -avP -e ssh --exclude='venv' --exclude='instance/config.py' --exclude='.git' --exclude='.gitignore' --exclude='.vscode' . appsuser@172.105.15.184:/home/appsuser/staging/yardsalemanager_api
+#sudo scp -r /media/sf_Projects/meq-software-website-api/ appsuser@172.105.15.184:/home/appsuser/meqsoftware-server
+echo "Deployment complete"
