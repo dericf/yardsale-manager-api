@@ -1,13 +1,19 @@
 #
-# Flask
-#
-from application.auth import auth_blueprint
-from flask import Flask, request, url_for, redirect
-from flask_cors import CORS, cross_origin
-#
 # Configuration Object
 #
 from instance.config import CONFIG as conf
+CONFIG = conf()
+from sendgrid import SendGridAPIClient
+sg_client = SendGridAPIClient(CONFIG.SEND_GRID_API_KEY)
+
+from application.auth import auth_blueprint
+from application.market import market_blueprint
+from application.maps import maps_blueprint
+#
+# Flask
+#
+from flask import Flask, request, url_for, redirect
+from flask_cors import CORS, cross_origin
 #
 # Python Standard Library
 #
@@ -22,13 +28,9 @@ import datetime
 # sudo apt-get install build-essential libffi-dev python-dev
 
 #
-# Instantiate the configuration object
-#
-CONFIG = conf()
-#
 # Create the flask application object
 #
-app = Flask(__name__)
+app = Flask(__name__, static_folder='application/static')
 #
 # Load the CONFIG object into the flask.app.config
 #
@@ -36,6 +38,8 @@ app.config.from_object(CONFIG)
 #
 # Load blueprints
 app.register_blueprint(auth_blueprint, url_prefix="/auth")
+app.register_blueprint(market_blueprint, url_prefix="/api/market")
+app.register_blueprint(maps_blueprint, url_prefix="/api/maps")
 #
 #
 # Initialize CORS
@@ -53,6 +57,7 @@ cors = CORS(
 #
 logging.basicConfig(level="INFO", filename='app.log', filemode='a',
                     format="%(asctime)s - %(process)d - %(levelname)s - %(message)s", datefmt="%a, %d %b %Y %H:%M:%S")
+
 
 
 @app.route('/')
