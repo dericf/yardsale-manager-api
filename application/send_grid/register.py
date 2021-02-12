@@ -1,13 +1,17 @@
+import logging
+from flask import render_template
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import json
 from instance.config import CONFIG as conf
 CONFIG = conf()
 
-import logging
 
 def send_email(to_emails, subject, html_content):
-    message = Mail(from_email=CONFIG.SEND_GRID_FROM_EMAIL,
+    #
+    # Build Sendgrid Mail Object
+    #
+    message = Mail(from_email='welcome@yardsalemanager.com',
                    to_emails=to_emails,
                    subject=subject,
                    html_content=html_content)
@@ -22,20 +26,19 @@ def send_email(to_emails, subject, html_content):
         logging.error("Error Sending Email", e.message)
 
 
-def build_message(user_id, confirmation_key):
-    subject = 'Email Confirmation Required'
-    if CONFIG.ENV == 'dev':
-        link = f'{CONFIG.HOST_BASE_URL}/auth/register/confirm?key={confirmation_key}&uid={user_id}'
-        html_content = f'''<a type="button" href="{link}">{link}<a>'''
-    else:
-        link = f'{CONFIG.HOST_BASE_URL}/auth/register/confirm?key={confirmation_key}&uid={user_id}'
-        html_content = f'''Click the link below to confirm your email. <br/> 
-<a type="button" href="{link}">Confirm Email</a> <br />
-or paste the following link into your browser <br />
-{link}'''
-    return subject, html_content
-
-
 def send_confirmation_email(user):
-    subject, html_content = build_message(user['uuid'], user['confirmation_key'])
-    send_email(to_emails=user["email"], subject=subject, html_content=html_content)
+    subject = 'Email Confirmation Required'
+    #
+    # Build the confirm link
+    #
+    confirm_link = f"{CONFIG.HOST_BASE_URL}/auth/register/confirm?key={user['confirmation_key']}&uid={user['uuid']}"
+    #
+    # Render the HTML email template
+    #
+    html_content = render_template(
+        'register-confirm-email.html', user=user, confirm_link=confirm_link)
+    #
+    # Send the email
+    #
+    send_email(to_emails=user["email"],
+               subject=subject, html_content=html_content)
