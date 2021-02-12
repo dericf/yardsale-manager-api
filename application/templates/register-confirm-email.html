@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html lang="en">
+  <body
+    style="
+      margin: 0 auto;
+      font-family: Helvetica, sans-serif;
+      color: #333333;
+      text-align: center;
+      max-width: 520px;
+      padding: 0 20px;
+    "
+  >
+    <div style="text-align: center; padding: 75px 0">
+      <a
+        target="_blank"
+        rel="noopener noreferrer"
+        href="https://yardsalemanager.com"
+      >
+        Yardsale Manager
+        <!-- <img
+          alt="Yard Sale Manager"
+          width="105"
+          height="27"
+          src="/application/static/logo1.png"
+        /> -->
+      </a>
+    </div>
+    <div style="font-size: 16px; text-align: left">
+      <div style="line-height: 150%">
+        <div style="font-size: 20px">
+          Hey {% if user["name"] != none and user["name"] != "" %} {{
+          user["name"] }} {% else %} {{ user["email"] }} {% endif %}!
+        </div>
+
+        <div style="margin: 15px 0">
+          To confirm your email and finish activating your account, click the
+          link below.
+        </div>
+      </div>
+      <div>
+        <a
+          href="{{ confirm_link }}"
+          style="
+            background: #324e7b;
+            padding: 9px;
+            width: 200px;
+            color: #fff;
+            text-decoration: none;
+            display: inline-block;
+            font-weight: bold;
+            text-align: center;
+            cursor: pointer;
+            letter-spacing: 0.5px;
+            border-radius: 4px;
+          "
+          >Confirm Email
+        </a>
+      </div>
+      <div>
+        <div>
+          You can also copy and paste the following link into your browser: {{ confirm_link }}
+        </div>
+      </div>
+      <div style="line-height: 150%">
+        <div style="margin: 15px 0">
+          If you have any problems, please contact us:
+          <a
+            href="mailto:support@yardsalemanager.com"
+            style="color: #324e7b"
+            target="_blank"
+            rel="noopener noreferrer"
+            >support@yardsalemanager.com</a
+          >
+        </div>
+        <div style="color: #828282; margin: 15px 0">
+          - Yard Sale Manager Team
+        </div>
+      </div>
+    </div>
+  </body>
+</html>
