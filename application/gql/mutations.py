@@ -39,8 +39,24 @@ CREATE_SELLER = '''mutation CreateSeller($user_uuid: uuid!, $email: String, $ini
 '''
 
 SET_USER_EMAIL_CONFIRMED = '''mutation SetUserEmailConfirmed($uuid: uuid) {
-  __typename
   update_user(where: {uuid: {_eq: $uuid}}, _set: {has_confirmed: true}) {
+    returning {
+      uuid
+    }
+  }
+}'''
+
+SET_PASSWORD_RESET_CODE = '''mutation SetPasswordResetCode($uuid: uuid!, $code: String!) {
+  update_user(where: {uuid: {_eq: $uuid}}, _set: {password_reset_code: $code}) {
+    returning {
+      uuid
+    }
+  }
+}'''
+
+
+UPDATE_PASSWORD = '''mutation UpdatePasswordAndClearResetCode($uuid: uuid!, $password: String!) {
+  update_user(where: {uuid: {_eq: $uuid}}, _set: {password_reset_code: null, password_hash: $password}) {
     returning {
       uuid
     }

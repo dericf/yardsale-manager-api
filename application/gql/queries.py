@@ -13,6 +13,8 @@ GET_USER_BY_EMAIL = '''query GetUserByEmail($email: String!) {
     token_version
     name
     initials
+    password_reset_code
+    has_completed_onboarding
   }
 }'''
 # Get User (by uuid)
@@ -30,6 +32,23 @@ GET_USER_BY_UUID = '''query GetUserByUUID($uuid: uuid!) {
     token_version
     name
     initials
+    password_reset_code
+    has_completed_onboarding
   }
 }'''
 # Get Session (by user id)
+
+
+#
+# GET all yardsales
+#
+GET_PUBLIC_YARDSALES = '''query GetPublicYardsales {
+  yardsale(where: {is_public: {_eq: true}}) {
+    uuid
+    name
+    email
+    pos_lat
+    pos_lng
+    address_text
+  }
+}'''
