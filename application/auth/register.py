@@ -17,7 +17,7 @@ from pprint import pprint
 import json
 from time import gmtime, strftime
 import datetime
-import uuid
+import uuid as uuidlib
 #
 # Password Hashing
 #
@@ -35,7 +35,7 @@ from application.gql.queries import GET_USER_BY_EMAIL
 #
 # User Helper Functions
 #
-from application.auth.user import get_user_by_email, get_user_by_uuid, confirm_user
+from application.auth.user import get_user_by_email, get_user_by_uuid, confirm_user, generate_password_hash
 #
 # SendGrid Library
 #
@@ -45,6 +45,8 @@ from sendgrid.helpers.mail import Mail
 # Email Helper Functions
 #
 from application.send_grid.register import send_confirmation_email
+
+
 
 CONFIG = conf()
 
@@ -61,23 +63,12 @@ def is_email_valid_to_register(email):
 
 def generate_random_uuid():
     # Generate a UUID as a confirmation key
-    return str(uuid.uuid4())
+    return str(uuidlib.uuid4())
 
 
 def save_confirmation_key(key, user):
     # TODO
     pass
-
-
-def generate_password_hash(password):
-    # return bcrypt.kdf(
-    #     password=password,
-    #     salt=CONFIG.BCRYPT_SALT,
-    #     desired_key_bytes=32,
-    #     rounds=100
-    # )
-    return bcrypt.hashpw(password.encode('utf8'), bcrypt.gensalt())
-
 
 def register_new_user(name, initials, email, password, confirmation_key):
     # Hash password
@@ -139,6 +130,8 @@ def auth_register():
         #
         create_seller_for_new_user(user=new_user)
         #
+        # Todo: send this off to a redis queue
+        #
         send_confirmation_email(user=new_user)
         #
         return {"STATUS": "OK", "MESSAGE": "Success! Please check your email for the confirmation link."}
@@ -159,6 +152,6 @@ def auth_register_confirm():
         #
         user = confirm_user(uid)
         # return {"STATUS": "OK", "MESSAGE": "User has been confirmed. You may now log in at https://yardsalemanager.meqsoftware.com/login"}
-        return redirect(f"{CONFIG.HOST_BASE_URL}/register/confirm-email")
+        return {"STATUS": "OK"} # redirect(f"{CONFIG.CLIENT_BASE_URL}/register/confirm-email")
     else:
         return {"STATUS": "ERROR", "MESSAGE": "Something went wrong. The link provided might have been changed from the original."}

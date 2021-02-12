@@ -47,6 +47,7 @@ def generate_auth_token(user):
         "aud": CONFIG.JWT_AUDIENCE,
         "exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=CONFIG.ACCESS_TOKEN_EXPIRE)),
         "alg": "RS256",
+        "expires_at": "",
         "https://hasura.io/jwt/claims": {
             "x-hasura-allowed-roles": ["user"],
             "x-hasura-default-role": "anonymous",
@@ -72,6 +73,7 @@ def generate_refresh_token(user):
         "email": user['email'],
         "aud": CONFIG.JWT_AUDIENCE,
         "exp": (datetime.datetime.utcnow() + datetime.timedelta(seconds=CONFIG.REFRESH_TOKEN_EXPIRE)),
+        "expires_at": "",
         "alg": "RS256",
         "token_version": 0
     }
@@ -86,36 +88,56 @@ def generate_refresh_token(user):
 
 @auth_blueprint.route('/login', methods=['POST'])
 def auth_login():
-    '''Login: The user tries to log in by posting a form on the client.
+    '''Login: The user tries to log in by posting via the client with data in the body of the request.
     If the username and password match the DB record, then a token will be generated and sent back in the response.
-    This token should expire.
+    This token expires based on CONFIG.ACCESS_TOKEN_EXPIRE.
     If either username does not exist or username/password combo do not match, then return an error with the appropriate message.
     '''
+    # Get request body as json(dict)
     data = request.get_json()
-    # TODO: Add actual logic here
     email = data.get('email')
     password = data.get('password')
     #
-    # Check the credentials
+    # Check the credentials (Try and get a user with that email)
     #
-    try_user = get_user_by_email(email)
-    if try_user is None:  # user does not exist based on that email
-        return {"STATUS": "ERROR", "MESSAGE": "User not found"}
+    user = get_user_by_email(email)
+    if user is None:  # user does not exist based on that email
+        return {
+            "STATUS": "ERROR",
+            "MESSAGE": "User not found"
+        }
     else:
-        if bcrypt.checkpw(password.encode('utf8'), try_user['password_hash'].encode('utf8')):
+        if bcrypt.checkpw(password.encode('utf8'), user['password_hash'].encode('utf8')):
             #
             # User credentials are correct!
             #
-            if not try_user['has_confirmed']:
+            if not user['has_confirmed']:
                 #
                 # User has not confirmed their email yet
                 #
-                return {"STATUS": "ERROR", "MESSAGE": "Email not confirmed"}
+                return {
+                    "STATUS": "ERROR",
+                    "MESSAGE": "Email not confirmed"
+                }
 
-            token = generate_auth_token(try_user)
-            refresh_token = generate_refresh_token(try_user)
+            token = generate_auth_token(user)
+            refresh_token = generate_refresh_token(user)
             res = make_response(
-                {"STATUS": "OK", "token": token, "refreshToken": refresh_token, "callback": f"http://127.0.0.1:8000/auth/callback?uuid={try_user['uuid']}"})
+                {
+                    "STATUS": "OK",
+                    "token": token,
+                    "tokenExpiry": CONFIG.ACCESS_TOKEN_EXPIRE,
+                    "refreshToken": refresh_token,
+                    "callback": f"http://127.0.0.1:8000/auth/callback?uuid={user['uuid']}",
+                    "user": {
+                        "uuid": user['uuid'],
+                        "email": user['email'],
+                        "name": user['name'],
+                        "initials": user['initials'],
+                        "hasCompletedOnboarding": user['has_completed_onboarding']
+                    }
+                }
+            )
             # res.headers['Access-Control-Allow-Credentials'] = True
             # res.set_cookie(key='refreshToken', value=refresh_token,
             #                domain='127.0.0.1:3000', httponly=True)  # max_age=CONFIG.REFRESH_TOKEN_EXPIRE,
@@ -126,8 +148,11 @@ def auth_login():
 
 @auth_blueprint.route('/callback')
 def login_callback():
+    """
+    This should set a cookie on the client containing a valid jwt
+    """
     user = get_user_by_uuid(request.args.get('uuid'))
-    print('\n\n\nCALLBACK USER: ', user)
+    # print('\n\n\nCALLBACK USER: ', user)
     if user:
         refresh_token = generate_refresh_token(user)
         res = make_response(
@@ -159,7 +184,14 @@ def auth_refresh():
             return {"STATUS": "ERROR", 'MESSAGE': "refresh token expired", "newToken": None}
         elif decoded_result[0] == 'SUCCESS' and decoded_result[1] == 'VALID':
             user = get_user_by_email(decoded_result[2]['email'])
-            return {"STATUS": "OK", "newToken": generate_auth_token(user)}
+            returnUser = {
+                "uuid": user['uuid'],
+                "email": user['email'],
+                "name": user['name'],
+                "initials": user['initials'],
+                "hasCompletedOnboarding": user['has_completed_onboarding']
+            }
+            return {"STATUS": "OK", "newToken": generate_auth_token(user), "user": returnUser, "newRefreshToken": generate_refresh_token(user)}
     except Exception as e:
         print('\n\n\n\nError: ', str(e))
         return {'STATUS': "ERROR"}
