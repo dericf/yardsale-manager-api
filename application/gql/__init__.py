@@ -4,7 +4,7 @@ import requests
 
 import json
 
-from instance.config import CONFIG as config
+from config import CONFIG as config
 
 CONFIG = config()
 

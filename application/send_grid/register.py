@@ -3,7 +3,7 @@ from flask import render_template
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import json
-from instance.config import CONFIG as conf
+from config import CONFIG as conf
 CONFIG = conf()
 
 

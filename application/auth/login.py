@@ -7,7 +7,7 @@ from flask_cors import CORS, cross_origin
 #
 # Configuration Object
 #
-from instance.config import CONFIG as conf
+from config import CONFIG as conf
 #
 # Python Standard Library
 #
