@@ -146,7 +146,7 @@ def auth_register_confirm():
     uid = request.args.get('uid')
 
     user = get_user_by_uuid(uid)
-    print('User: ', user)
+    # print('User: ', user)
     if user['confirmation_key'] == confirmation_key:
         # This was the correct link. Proceed to confirm
         #
