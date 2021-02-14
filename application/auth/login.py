@@ -173,7 +173,7 @@ def auth_refresh():
     # TODO: Decode refresh token and get user
     #
     try:
-        rt = body.get('refreshToken')
+        rt = body.get('refreshToken').encode('utf-8')
         # print('\n\nRT: ', rt)
         decoded_result = decode_token(rt, verify=True)
         # print('Refresh Token Result: ', decoded_result)
