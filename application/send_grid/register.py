@@ -3,7 +3,7 @@ from flask import render_template
 from sendgrid import SendGridAPIClient
 from sendgrid.helpers.mail import Mail
 import json
-from instance.config import CONFIG as conf
+from config import CONFIG as conf
 CONFIG = conf()
 
 
@@ -31,7 +31,7 @@ def send_confirmation_email(user):
     #
     # Build the confirm link
     #
-    confirm_link = f"{CONFIG.HOST_BASE_URL}/auth/register/confirm?key={user['confirmation_key']}&uid={user['uuid']}"
+    confirm_link = f"{CONFIG.CLIENT_BASE_URL}/confirm-account?key={user['confirmation_key']}&uid={user['uuid']}"
     #
     # Render the HTML email template
     #

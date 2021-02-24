@@ -7,7 +7,7 @@ from flask_cors import CORS, cross_origin
 #
 # Configuration Object
 #
-from instance.config import CONFIG as conf
+from config import CONFIG as conf
 #
 # Python Standard Library
 #
@@ -166,17 +166,17 @@ def login_callback():
 @auth_blueprint.route('/refresh', methods=['POST'])
 def auth_refresh():
     # TODO: Refresh token here
-    print('Request Cookies: ', request.cookies)
+    # print('Request Cookies: ', request.cookies)
     body = request.get_json()
-    print('Body: ', body)
+    # print('Body: ', body)
     #
     # TODO: Decode refresh token and get user
     #
     try:
-        rt = body.get('refreshToken')
-        print('\n\nRT: ', rt)
+        rt = body.get('refreshToken').encode('utf-8')
+        # print('\n\nRT: ', rt)
         decoded_result = decode_token(rt, verify=True)
-        print('Refresh Token Result: ', decoded_result)
+        # print('Refresh Token Result: ', decoded_result)
         # user = get_user_by_email(refresh['email'])
         # print('User from RF Token: ', user)
         # new_token = generate_auth_token(user)

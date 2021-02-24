@@ -1,7 +1,7 @@
 #
 # Configuration Object
 #
-from instance.config import CONFIG as conf
+from config import CONFIG as conf
 CONFIG = conf()
 from sendgrid import SendGridAPIClient
 sg_client = SendGridAPIClient(CONFIG.SEND_GRID_API_KEY)

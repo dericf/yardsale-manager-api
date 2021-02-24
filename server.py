@@ -6,7 +6,7 @@ from flask_cors import CORS, cross_origin
 #
 # Configuration Object
 #
-from instance.config import CONFIG as conf
+from config import CONFIG as conf
 #
 # Python Standard Library
 #
@@ -20,20 +20,19 @@ import datetime
 from application import app
 
 CONFIG = conf()
+# def create_directories():
+#     try:
+#         os.mkdir(CONFIG.UPLOAD_FOLDER)
+#     except:
+#         pass
 
-def create_directories():
-    try:
-        os.mkdir(CONFIG.UPLOAD_FOLDER)
-    except:
-        pass
 
-
-def init_server():
-    create_directories()
+# def init_server():
+#     create_directories()
 
 
 from application.auth import login, register, user
 
 if __name__ == '__main__':
-    init_server()
+    # init_server()
     app.run(host=CONFIG.SERVER_HOST, port=CONFIG.SERVER_PORT)

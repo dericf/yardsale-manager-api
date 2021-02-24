@@ -3,7 +3,7 @@ from . import auth_blueprint
 #
 # Configuration Object
 #
-from instance.config import CONFIG as conf
+from config import CONFIG as conf
 #
 # Python Standard Library
 #

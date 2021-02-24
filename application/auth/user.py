@@ -1,7 +1,7 @@
 #
 # Configuration Object
 #
-from instance.config import CONFIG as conf
+from config import CONFIG as conf
 #
 # Python Standard Library
 #
@@ -74,7 +74,7 @@ def confirm_user(uuid):
 
 def generate_and_set_password_reset_code(uuid):
     reset_code = str(uuidlib.uuid4())
-    print("reset code: ", reset_code)
+    # print("reset code: ", reset_code)
     Mutation(SET_PASSWORD_RESET_CODE, variables={
         "uuid": uuid,
         "code": reset_code
@@ -90,4 +90,4 @@ def set_new_password(user_uuid, new_password):
         "password": str(new_password_hash, encoding="UTF-8")
     }
     result = Mutation(UPDATE_PASSWORD, variables, as_admin=True)
-    print('RESULT: ', result)
+    # print('RESULT: ', result)

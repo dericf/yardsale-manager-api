@@ -2,7 +2,7 @@ from flask import Blueprint
 
 # import googlemaps
 
-from instance.config import CONFIG as conf
+from config import CONFIG as conf
 
 CONFIG = conf()
 
