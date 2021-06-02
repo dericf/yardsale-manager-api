@@ -45,7 +45,7 @@ Rx==1.6.1
 sendgrid==6.1.0
 six==1.15.0
 traitlets==4.3.3
-urllib3==1.25.7
+urllib3==1.26.5
 virtualenv==20.3.1
 virtualenv-clone==0.5.4
 wcwidth==0.2.5
